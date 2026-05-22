@@ -3,22 +3,30 @@
  * 
  * Place this file at: /functions/_middleware.js in your Pages project
  * 
- * This middleware intercepts all requests and routes encryption/decryption
- * operations through the Void 3 cipher worker.
+ * VOID 3 CIPHER WITH EXPIRATION SUPPORT
+ * 
+ * Settings format: algorithm[,iterations[,seed[,expirationMinutes]]]
+ * Examples:
+ *   void3                    (default, no expiration)
+ *   void3,5,seed123          (custom seed, no expiration)
+ *   void3,5,seed123,30       (expires in 30 minutes)
+ *   void3,5,seed123,1440     (expires in 24 hours)
  */
 
 // Character set: a-z + A-Z + 0-9 + extended unicode
 const CHARSET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 // ============================================================
-// VOID 3 SIGNATURE CIPHER IMPLEMENTATION
+// VOID 3 SIGNATURE CIPHER IMPLEMENTATION WITH EXPIRATION
 // ============================================================
 
 class Void3Cipher {
   constructor(key, options = {}) {
     this.key = key;
     this.iterations = options.iterations || 5;
-    this.seed = options.seed || Date.now().toString();
+    this.seed = options.seed || null;
+    this.expirationMinutes = options.expirationMinutes || null;
+    this.encryptionTime = null; // Stored timestamp in encrypted data
     this.baseKey = this.hashKey(key);
   }
 
@@ -40,8 +48,8 @@ class Void3Cipher {
      * - Key content: Hash of the key influences shift
      * - Position in word: Different chars in same word get different shifts
      * - Local context: Surrounding characters influence the shift
-     * - Time (milliseconds): Sub-second precision
-     * - Date: Day/month/year components add temporal uniqueness
+     * - Time (milliseconds + minutes + hours): Temporal precision for expiration
+     * - Date: Day/month components add date-based uniqueness
      */
     
     const components = [
@@ -50,7 +58,9 @@ class Void3Cipher {
       index % 26,
       position % 26,
       contextBefore.length % 26,
-      datetime.ms % 26,
+      datetime.ms % 26,           // Milliseconds
+      datetime.minutes % 26,       // Minutes (changes every minute)
+      datetime.hours % 26,         // Hours (changes every hour)
       datetime.day % 26,
       datetime.month % 26,
     ];
@@ -82,11 +92,70 @@ class Void3Cipher {
     const now = new Date();
     return {
       ms: now.getMilliseconds(),
+      minutes: now.getMinutes(),
+      hours: now.getHours(),
       day: now.getDate(),
       month: now.getMonth() + 1,
       year: now.getFullYear(),
-      hours: now.getHours(),
-      minutes: now.getMinutes(),
+      timestamp: now.getTime(), // Full timestamp in ms
+    };
+  }
+
+  /**
+   * Encode timestamp as prefix in ciphertext
+   * Format: [TIMESTAMP_ENCODED]:actual_ciphertext
+   * Timestamp is base36-encoded for compactness
+   */
+  encodeTimestamp(timestamp) {
+    // Encode timestamp in a compact format
+    return timestamp.toString(36).padStart(10, '0');
+  }
+
+  decodeTimestamp(encoded) {
+    try {
+      return parseInt(encoded, 36);
+    } catch {
+      return null;
+    }
+  }
+
+  checkExpiration(encryptedData) {
+    /**
+     * Check if encrypted data has expired
+     * Returns: { valid: boolean, message: string, timestamp: number }
+     */
+    if (!this.expirationMinutes) {
+      return { valid: true, message: 'No expiration set', timestamp: null };
+    }
+
+    // Extract timestamp from encrypted data (first 10 chars + separator)
+    const parts = encryptedData.split(':');
+    if (parts.length < 2) {
+      return { valid: false, message: 'Invalid encrypted format (no timestamp)', timestamp: null };
+    }
+
+    const encodedTime = parts[0];
+    const encryptedTime = this.decodeTimestamp(encodedTime);
+
+    if (encryptedTime === null) {
+      return { valid: false, message: 'Could not decode timestamp', timestamp: null };
+    }
+
+    const now = Date.now();
+    const ageMinutes = (now - encryptedTime) / (1000 * 60);
+
+    if (ageMinutes > this.expirationMinutes) {
+      return {
+        valid: false,
+        message: `Data expired. Age: ${ageMinutes.toFixed(1)} minutes, Limit: ${this.expirationMinutes} minutes`,
+        timestamp: encryptedTime,
+      };
+    }
+
+    return {
+      valid: true,
+      message: `Valid. Age: ${ageMinutes.toFixed(1)} minutes, Expires in: ${(this.expirationMinutes - ageMinutes).toFixed(1)} minutes`,
+      timestamp: encryptedTime,
     };
   }
 
@@ -117,7 +186,6 @@ class Void3Cipher {
           const newIndex = (mapping.index + shift) % CHARSET.length;
           ciphertext += CHARSET[newIndex];
         } else {
-          // Preserve non-charset characters as-is
           ciphertext += char;
         }
 
@@ -129,10 +197,27 @@ class Void3Cipher {
       }
     }
 
+    // If expiration is set, prepend timestamp
+    if (this.expirationMinutes) {
+      const encodedTime = this.encodeTimestamp(datetime.timestamp);
+      ciphertext = encodedTime + ':' + ciphertext;
+    }
+
     return ciphertext;
   }
 
   decrypt(ciphertext) {
+    // Check expiration first if set
+    if (this.expirationMinutes) {
+      const expirationCheck = this.checkExpiration(ciphertext);
+      if (!expirationCheck.valid) {
+        throw new Error(expirationCheck.message);
+      }
+      // Remove timestamp prefix
+      const parts = ciphertext.split(':');
+      ciphertext = parts.slice(1).join(':'); // In case data contains colons
+    }
+
     const datetime = this.getDateTime();
     let plaintext = '';
     const words = ciphertext.split(/\s+/);
