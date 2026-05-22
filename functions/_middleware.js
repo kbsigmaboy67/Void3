@@ -299,27 +299,32 @@ export async function onRequest(context) {
       return renderErrorPage('Operation must be "encrypt" or "decrypt"');
     }
 
-    // Parse settings
+    // Parse settings: algorithm[,iterations[,seed[,expirationMinutes]]]
     const settingsParts = settings.split(',');
     const algorithm = settingsParts[0] || 'void3';
     const iterations = parseInt(settingsParts[1]) || 5;
-    const seed = settingsParts[2] || undefined;
+    const seed = settingsParts[2] || null;
+    const expirationMinutes = settingsParts[3] ? parseInt(settingsParts[3]) : null;
 
     if (algorithm !== 'void3') {
       return renderErrorPage('Only "void3" algorithm is supported');
     }
 
     // Execute cipher
-    const cipher = new Void3Cipher(key, { iterations, seed });
+    const cipher = new Void3Cipher(key, { iterations, seed, expirationMinutes });
     let result;
 
-    if (operation === 'encrypt') {
-      result = cipher.encrypt(data);
-    } else {
-      result = cipher.decrypt(data);
+    try {
+      if (operation === 'encrypt') {
+        result = cipher.encrypt(data);
+      } else {
+        result = cipher.decrypt(data);
+      }
+    } catch (decryptError) {
+      return renderErrorPage(`Decryption error: ${decryptError.message}`);
     }
 
-    return renderResultPage(result, operation, key);
+    return renderResultPage(result, operation, key, expirationMinutes);
   } catch (error) {
     return renderErrorPage(`Error: ${error.message}`);
   }
@@ -414,9 +419,10 @@ h1 {
   );
 }
 
-function renderResultPage(result, operation, key) {
+function renderResultPage(result, operation, key, expirationMinutes) {
   const timestamp = new Date().toISOString();
   const resultSafe = escapeHtml(result);
+  const expirationInfo = expirationMinutes ? `${expirationMinutes} minutes` : 'None';
 
   return new Response(
     `<!DOCTYPE html>
