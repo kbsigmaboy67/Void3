@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Void 3 Cipher - Advanced Encryption Console</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Courier New', monospace;
+      background: linear-gradient(135deg, #0a0a14 0%, #1a1a2e 100%);
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .header h1 {
+      font-size: 3em;
+      color: #00d9ff;
+      text-shadow: 0 0 30px rgba(0, 217, 255, 0.5);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #888;
+      font-size: 0.95em;
+      letter-spacing: 2px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    .panel {
+      background: rgba(15, 15, 30, 0.6);
+      border: 1px solid #00d9ff;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 8px 32px rgba(0, 217, 255, 0.1);
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .panel h2 {
+      color: #00d9ff;
+      font-size: 1.3em;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #00d9ff;
+      padding-bottom: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      color: #00d9ff;
+      font-size: 0.85em;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    input[type="datetime-local"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px;
+      background: #0a0a14;
+      border: 1px solid #00d9ff;
+      color: #00ff88;
+      border-radius: 4px;
+      font-family: 'SF Mono', 'Monaco', monospace;
+      font-size: 0.95em;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus,
+    input[type="number"]:focus,
+    input[type="datetime-local"]:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #00ffff;
+      box-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
+      background: #151520;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+      font-size: 0.9em;
+    }
+
+    .help-text {
+      font-size: 0.8em;
+      color: #888;
+      margin-top: 5px;
+      margin-left: 5px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    button {
+      flex: 1;
+      padding: 14px;
+      background: #00d9ff;
+      color: #0a0a14;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-family: 'SF Mono', monospace;
+      font-size: 0.9em;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: #00ffff;
+      box-shadow: 0 0 25px rgba(0, 217, 255, 0.6);
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: #4caf50;
+    }
+
+    button.secondary:hover {
+      background: #66bb6a;
+      box-shadow: 0 0 25px rgba(76, 175, 80, 0.6);
+    }
+
+    button.danger {
+      background: #ff6b6b;
+    }
+
+    button.danger:hover {
+      background: #ff8787;
+      box-shadow: 0 0 25px rgba(255, 107, 107, 0.6);
+    }
+
+    .result-panel {
+      background: rgba(15, 15, 30, 0.8);
+      border: 1px solid #00d9ff;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 8px 32px rgba(0, 217, 255, 0.1);
+      margin-top: 30px;
+      animation: slideUp 0.6s ease-out;
+      display: none;
+    }
+
+    .result-panel.show {
+      display: block;
+    }
+
+    .result-panel h3 {
+      color: #00d9ff;
+      font-size: 1.1em;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #00d9ff;
+      padding-bottom: 10px;
+    }
+
+    .result-text {
+      background: #0a0a14;
+      padding: 20px;
+      border-left: 4px solid #00d9ff;
+      border-radius: 4px;
+      color: #00ff88;
+      word-break: break-all;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      font-size: 0.9em;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 15px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .result-text::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .result-text::-webkit-scrollbar-track {
+      background: rgba(0, 217, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .result-text::-webkit-scrollbar-thumb {
+      background: #00d9ff;
+      border-radius: 4px;
+    }
+
+    .metadata {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .metadata-item {
+      background: rgba(0, 217, 255, 0.05);
+      padding: 12px;
+      border-left: 3px solid #00d9ff;
+      border-radius: 4px;
+    }
+
+    .metadata-item strong {
+      display: block;
+      color: #00d9ff;
+      font-size: 0.8em;
+      margin-bottom: 5px;
+      letter-spacing: 1px;
+    }
+
+    .metadata-item span {
+      color: #e0e0e0;
+      font-size: 0.9em;
+      word-break: break-all;
+    }
+
+    .status {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 4px;
+      text-align: center;
+      display: none;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.success {
+      background: rgba(76, 175, 80, 0.2);
+      color: #4caf50;
+      border: 1px solid #4caf50;
+    }
+
+    .status.error {
+      background: rgba(255, 107, 107, 0.2);
+      color: #ff6b6b;
+      border: 1px solid #ff6b6b;
+    }
+
+    .status.info {
+      background: rgba(0, 217, 255, 0.2);
+      color: #00d9ff;
+      border: 1px solid #00d9ff;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #00d9ff;
+    }
+
+    .tab-button {
+      padding: 12px 20px;
+      background: transparent;
+      color: #888;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-family: 'SF Mono', monospace;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      font-size: 0.9em;
+    }
+
+    .tab-button.active {
+      color: #00d9ff;
+      border-bottom-color: #00d9ff;
+    }
+
+    .tab-button:hover {
+      color: #00d9ff;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .expiration-section {
+      background: rgba(0, 217, 255, 0.05);
+      padding: 15px;
+      border-left: 4px solid #4caf50;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+
+    .expiration-section label {
+      color: #4caf50;
+    }
+
+    .time-now {
+      color: #888;
+      font-size: 0.8em;
+      margin-top: 5px;
+      padding: 8px;
+      background: #0a0a14;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .toggle-button {
+      padding: 8px 12px;
+      background: #00d9ff;
+      color: #0a0a14;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.8em;
+      font-family: 'SF Mono', monospace;
+      margin-top: 10px;
+    }
+
+    .toggle-button:hover {
+      background: #00ffff;
+    }
+
+    .tools-panel {
+      background: rgba(15, 15, 30, 0.6);
+      border: 1px solid #4caf50;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 8px 32px rgba(76, 175, 80, 0.1);
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .tools-panel h2 {
+      color: #4caf50;
+      border-bottom-color: #4caf50;
+    }
+
+    .tool-item {
+      margin-bottom: 20px;
+    }
+
+    .tool-item button {
+      background: #4caf50;
+      width: 100%;
+    }
+
+    .tool-item button:hover {
+      background: #66bb6a;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      background: #4caf50;
+      color: white;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 1000;
+      max-width: 300px;
+    }
+
+    .notification.show {
+      opacity: 1;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .metadata {
+        grid-template-columns: 1fr;
+      }
+      .header h1 {
+        font-size: 2em;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .header h1 {
+        font-size: 1.5em;
+      }
+      .button-group {
+        flex-direction: column;
+      }
+      .tabs {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>◆ VOID 3 ◆</h1>
+    <p>Advanced Encryption Console with Expiration Control</p>
+  </div>
+
+  <div class="grid">
+    <!-- Left Panel: Input -->
+    <div class="panel">
+      <h2>🔐 Encryption</h2>
+      
+      <div class="tabs">
+        <button class="tab-button active" onclick="switchTab(event, 'encrypt-mode')">Encrypt</button>
+        <button class="tab-button" onclick="switchTab(event, 'decrypt-mode')">Decrypt</button>
+      </div>
+
+      <!-- Encrypt Tab -->
+      <div id="encrypt-mode" class="tab-content active">
+        <div class="form-group">
+          <label for="encrypt-key">Encryption Key</label>
+          <input type="password" id="encrypt-key" placeholder="Enter a strong key" value="mySecretKey123">
+          <div class="help-text">Case-sensitive, min 6 characters recommended</div>
+        </div>
+
+        <div class="form-group">
+          <label for="plaintext">Plaintext Data</label>
+          <textarea id="plaintext" placeholder="Enter text to encrypt...">Hello World</textarea>
+          <div class="help-text" id="plaintext-size">0 characters</div>
+        </div>
+
+        <div class="expiration-section">
+          <label>
+            <input type="checkbox" id="enable-expiration" onchange="toggleExpirationUI()">
+            Enable Expiration
+          </label>
+          
+          <div id="expiration-ui" style="display: none; margin-top: 15px;">
+            <div class="form-group">
+              <label for="expiration-datetime">Expires At (Date & Time)</label>
+              <input type="datetime-local" id="expiration-datetime">
+              <div class="help-text">Select when the encryption expires</div>
+            </div>
+
+            <div class="form-group">
+              <label for="expiration-display">Or Expires In (Minutes)</label>
+              <input type="number" id="expiration-display" placeholder="30" min="1" max="525600">
+              <div class="help-text">Quick entry: 30 min, 60 min, 1440 min (24h), etc.</div>
+            </div>
+
+            <div class="time-now">
+              Current Time: <span id="current-time">--:--:--</span>
+              <br>
+              Expiration: <span id="expiration-info">Not set</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button onclick="encryptData()">🔒 Encrypt</button>
+        </div>
+      </div>
+
+      <!-- Decrypt Tab -->
+      <div id="decrypt-mode" class="tab-content">
+        <div class="form-group">
+          <label for="decrypt-key">Decryption Key</label>
+          <input type="password" id="decrypt-key" placeholder="Enter the decryption key" value="mySecretKey123">
+          <div class="help-text">Must match the original encryption key</div>
+        </div>
+
+        <div class="form-group">
+          <label for="ciphertext">Encrypted Data</label>
+          <textarea id="ciphertext" placeholder="Paste encrypted text here..."></textarea>
+          <div class="help-text" id="ciphertext-size">0 characters</div>
+        </div>
+
+        <div class="button-group">
+          <button onclick="decryptData()">🔓 Decrypt</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Tools & Reference -->
+    <div class="tools-panel">
+      <h2>🛠️ Tools & Info</h2>
+
+      <div class="tool-item">
+        <h3 style="color: #4caf50; margin-bottom: 10px; font-size: 0.95em; text-transform: uppercase; letter-spacing: 1px;">Live Statistics</h3>
+        <div style="background: #0a0a14; padding: 15px; border-radius: 4px; font-size: 0.85em;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Plaintext Length:</span>
+            <span id="stats-plaintext" style="color: #00ff88;">0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Ciphertext Length:</span>
+            <span id="stats-ciphertext" style="color: #00ff88;">0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Key Length:</span>
+            <span id="stats-key" style="color: #00ff88;">0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span>Expiration:</span>
+            <span id="stats-expiration" style="color: #4caf50;">None</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-item">
+        <h3 style="color: #4caf50; margin-bottom: 10px; font-size: 0.95em; text-transform: uppercase; letter-spacing: 1px;">Quick Actions</h3>
+        <button onclick="generateRandomKey()">🔑 Generate Key</button>
+      </div>
+
+      <div class="tool-item">
+        <button onclick="copyAllSettings()">📋 Copy API URL</button>
+      </div>
+
+      <div class="tool-item">
+        <button onclick="clearAll()">🗑️ Clear All</button>
+      </div>
+
+      <div class="tool-item">
+        <h3 style="color: #4caf50; margin-bottom: 10px; font-size: 0.95em; text-transform: uppercase; letter-spacing: 1px;">Settings Reference</h3>
+        <div style="background: #0a0a14; padding: 12px; border-radius: 4px; font-size: 0.8em; color: #888;">
+          <code>algorithm[,iter[,seed[,expMin]]]</code>
+          <div style="margin-top: 10px;">
+            <div>void3 - No expiry</div>
+            <div>void3,5,s,30 - 30 min expiry</div>
+            <div>void3,5,s,1440 - 24 hr expiry</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Panel -->
+  <div class="result-panel" id="result-panel">
+    <h3 id="result-title">Result</h3>
+    
+    <div class="result-text" id="result-text"></div>
+
+    <div class="metadata" id="result-metadata"></div>
+
+    <div class="status" id="result-status"></div>
+
+    <div class="button-group">
+      <button onclick="copyResult()">📋 Copy Result</button>
+      <button class="secondary" onclick="copyAsURL()">🔗 Copy as URL</button>
+      <button class="secondary" onclick="downloadResult()">⬇️ Download</button>
+    </div>
+  </div>
+</div>
+
+<div class="notification" id="notification"></div>
+
+<script>
+  // Update statistics in real-time
+  document.getElementById('plaintext').addEventListener('input', updateStats);
+  document.getElementById('encrypt-key').addEventListener('input', updateStats);
+  document.getElementById('decrypt-key').addEventListener('input', updateStats);
+  document.getElementById('ciphertext').addEventListener('input', updateStats);
+
+  // Update character count on input
+  document.getElementById('plaintext').addEventListener('input', () => {
+    const count = document.getElementById('plaintext').value.length;
+    document.getElementById('plaintext-size').textContent = `${count} characters`;
+  });
+
+  document.getElementById('ciphertext').addEventListener('input', () => {
+    const count = document.getElementById('ciphertext').value.length;
+    document.getElementById('ciphertext-size').textContent = `${count} characters`;
+  });
+
+  // Update expiration info
+  document.getElementById('expiration-datetime').addEventListener('change', updateExpirationInfo);
+  document.getElementById('expiration-display').addEventListener('input', updateExpirationFromMinutes);
+
+  // Update current time every second
+  setInterval(updateCurrentTime, 1000);
+  updateCurrentTime();
+
+  function updateCurrentTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('en-US', { 
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }) + '.' + String(now.getMilliseconds()).padStart(3, '0');
+    document.getElementById('current-time').textContent = timeString;
+  }
+
+  function updateStats() {
+    const plaintext = document.getElementById('plaintext').value;
+    const ciphertext = document.getElementById('ciphertext').value;
+    const key = document.getElementById('encrypt-key').value || document.getElementById('decrypt-key').value;
+
+    document.getElementById('stats-plaintext').textContent = plaintext.length;
+    document.getElementById('stats-ciphertext').textContent = ciphertext.length;
+    document.getElementById('stats-key').textContent = key.length;
+
+    const expEnabled = document.getElementById('enable-expiration').checked;
+    const expTime = document.getElementById('expiration-datetime').value;
+    document.getElementById('stats-expiration').textContent = expEnabled && expTime ? 'Enabled' : 'None';
+  }
+
+  function toggleExpirationUI() {
+    const enabled = document.getElementById('enable-expiration').checked;
+    document.getElementById('expiration-ui').style.display = enabled ? 'block' : 'none';
+    updateStats();
+  }
+
+  function updateExpirationInfo() {
+    const datetime = document.getElementById('expiration-datetime').value;
+    if (!datetime) {
+      document.getElementById('expiration-info').textContent = 'Not set';
+      return;
+    }
+
+    const expTime = new Date(datetime);
+    const now = new Date();
+    const diffMs = expTime - now;
+    const diffMin = Math.round(diffMs / (1000 * 60));
+
+    if (diffMin < 0) {
+      document.getElementById('expiration-info').textContent = `EXPIRED ${Math.abs(diffMin)} min ago`;
+    } else {
+      document.getElementById('expiration-info').textContent = `In ${diffMin} minutes`;
+      document.getElementById('expiration-display').value = diffMin;
+    }
+  }
+
+  function updateExpirationFromMinutes() {
+    const minutes = parseInt(document.getElementById('expiration-display').value);
+    if (!minutes || isNaN(minutes)) return;
+
+    const now = new Date();
+    const expTime = new Date(now.getTime() + minutes * 60 * 1000);
+    
+    const year = expTime.getFullYear();
+    const month = String(expTime.getMonth() + 1).padStart(2, '0');
+    const day = String(expTime.getDate()).padStart(2, '0');
+    const hours = String(expTime.getHours()).padStart(2, '0');
+    const mins = String(expTime.getMinutes()).padStart(2, '0');
+
+    document.getElementById('expiration-datetime').value = `${year}-${month}-${day}T${hours}:${mins}`;
+    updateExpirationInfo();
+  }
+
+  function switchTab(event, tabId) {
+    // Remove active from all tabs
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+    // Add active to clicked tab
+    event.target.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
+
+  async function encryptData() {
+    const key = document.getElementById('encrypt-key').value;
+    const plaintext = document.getElementById('plaintext').value;
+    const enableExpiration = document.getElementById('enable-expiration').checked;
+    const expirationDatetime = document.getElementById('expiration-datetime').value;
+
+    if (!key || !plaintext) {
+      showNotification('Please fill in key and plaintext', 'error');
+      return;
+    }
+
+    try {
+      showStatus('info', 'Encrypting...');
+
+      // Calculate expiration minutes if enabled
+      let expirationMinutes = null;
+      if (enableExpiration && expirationDatetime) {
+        const expTime = new Date(expirationDatetime);
+        const now = new Date();
+        expirationMinutes = Math.round((expTime - now) / (1000 * 60));
+
+        if (expirationMinutes < 1) {
+          showStatus('error', 'Expiration time must be in the future');
+          return;
+        }
+      }
+
+      // Build settings string
+      let settings = 'void3';
+      if (expirationMinutes) {
+        settings = `void3,5,seed${Date.now()},${expirationMinutes}`;
+      }
+
+      // Build API URL
+      const baseURL = `${window.location.origin}${window.location.pathname.split('/').slice(0, -1).join('/')}`;
+      const apiURL = `${baseURL}/encrypt/${encodeURIComponent(key)}/${encodeURIComponent(settings)}`;
+
+      // Make request
+      const url = new URL(apiURL);
+      url.hash = encodeURIComponent(plaintext);
+
+      const response = await fetch(url.href);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const html = await response.text();
+      const match = html.match(/id="resultText">([^<]+)<\/div>/);
+
+      if (!match) {
+        throw new Error('Could not extract encrypted result');
+      }
+
+      const encrypted = match[1]
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&');
+
+      showResult('🔒 Encrypted Result', encrypted, {
+        'Operation': 'Encryption',
+        'Key Length': key.length,
+        'Plaintext': plaintext.length + ' chars',
+        'Ciphertext': encrypted.length + ' chars',
+        'Expiration': expirationMinutes ? `${expirationMinutes} minutes` : 'None'
+      });
+
+      showNotification('✓ Encryption successful', 'success');
+    } catch (error) {
+      showStatus('error', `Error: ${error.message}`);
+      showNotification(`✗ ${error.message}`, 'error');
+    }
+  }
+
+  async function decryptData() {
+    const key = document.getElementById('decrypt-key').value;
+    const ciphertext = document.getElementById('ciphertext').value;
+
+    if (!key || !ciphertext) {
+      showNotification('Please fill in key and ciphertext', 'error');
+      return;
+    }
+
+    try {
+      showStatus('info', 'Decrypting...');
+
+      // Build API URL
+      const baseURL = `${window.location.origin}${window.location.pathname.split('/').slice(0, -1).join('/')}`;
+      const apiURL = `${baseURL}/decrypt/${encodeURIComponent(key)}/void3`;
+
+      const url = new URL(apiURL);
+      url.hash = encodeURIComponent(ciphertext);
+
+      const response = await fetch(url.href);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const html = await response.text();
+      const match = html.match(/id="resultText">([^<]+)<\/div>/);
+
+      if (!match) {
+        throw new Error('Could not extract decrypted result');
+      }
+
+      const decrypted = match[1]
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&');
+
+      showResult('🔓 Decrypted Result', decrypted, {
+        'Operation': 'Decryption',
+        'Key Length': key.length,
+        'Ciphertext': ciphertext.length + ' chars',
+        'Plaintext': decrypted.length + ' chars'
+      });
+
+      showNotification('✓ Decryption successful', 'success');
+    } catch (error) {
+      showStatus('error', `Error: ${error.message}`);
+      showNotification(`✗ ${error.message}`, 'error');
+    }
+  }
+
+  function showResult(title, text, metadata) {
+    document.getElementById('result-title').textContent = title;
+    document.getElementById('result-text').textContent = text;
+
+    // Build metadata HTML
+    let metadataHTML = '';
+    for (const [key, value] of Object.entries(metadata)) {
+      metadataHTML += `
+        <div class="metadata-item">
+          <strong>${key}</strong>
+          <span>${value}</span>
+        </div>
+      `;
+    }
+    document.getElementById('result-metadata').innerHTML = metadataHTML;
+
+    document.getElementById('result-panel').classList.add('show');
+    document.getElementById('result-status').classList.remove('show');
+    updateStats();
+  }
+
+  function showStatus(type, message) {
+    const status = document.getElementById('result-status');
+    status.textContent = message;
+    status.className = `status show ${type}`;
+  }
+
+  function showNotification(message, type = 'success') {
+    const notif = document.getElementById('notification');
+    notif.textContent = message;
+    notif.className = `notification show`;
+    notif.style.background = type === 'error' ? '#ff6b6b' : type === 'info' ? '#00d9ff' : '#4caf50';
+
+    setTimeout(() => notif.classList.remove('show'), 3000);
+  }
+
+  function copyResult() {
+    const text = document.getElementById('result-text').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      showNotification('✓ Copied to clipboard');
+    });
+  }
+
+  function copyAsURL() {
+    const text = document.getElementById('result-text').textContent;
+    const key = document.getElementById('encrypt-key').value || document.getElementById('decrypt-key').value;
+    const isEncrypted = document.getElementById('result-title').textContent.includes('Encrypted');
+    const operation = isEncrypted ? 'encrypt' : 'decrypt';
+
+    const baseURL = `${window.location.origin}${window.location.pathname.split('/').slice(0, -1).join('/')}`;
+    const url = `${baseURL}/${operation}/${encodeURIComponent(key)}/void3#${encodeURIComponent(text)}`;
+
+    navigator.clipboard.writeText(url).then(() => {
+      showNotification('✓ URL copied to clipboard');
+    });
+  }
+
+  function downloadResult() {
+    const text = document.getElementById('result-text').textContent;
+    const title = document.getElementById('result-title').textContent;
+    const filename = title.includes('Encrypted') ? 'encrypted.txt' : 'decrypted.txt';
+
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showNotification('✓ Downloaded');
+  }
+
+  function generateRandomKey() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let key = '';
+    for (let i = 0; i < 32; i++) {
+      key += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    document.getElementById('encrypt-key').value = key;
+    document.getElementById('decrypt-key').value = key;
+    showNotification('✓ Random key generated (32 chars)');
+    updateStats();
+  }
+
+  function copyAllSettings() {
+    const key = document.getElementById('encrypt-key').value;
+    const data = document.getElementById('plaintext').value;
+    const enableExp = document.getElementById('enable-expiration').checked;
+    const expTime = document.getElementById('expiration-datetime').value;
+
+    let settings = 'void3';
+    if (enableExp && expTime) {
+      const expDate = new Date(expTime);
+      const now = new Date();
+      const minutes = Math.round((expDate - now) / (1000 * 60));
+      settings = `void3,5,seed${Date.now()},${minutes}`;
+    }
+
+    const baseURL = `${window.location.origin}${window.location.pathname.split('/').slice(0, -1).join('/')}`;
+    const url = `${baseURL}/encrypt/${encodeURIComponent(key)}/${encodeURIComponent(settings)}#${encodeURIComponent(data)}`;
+
+    navigator.clipboard.writeText(url).then(() => {
+      showNotification('✓ API URL copied');
+    });
+  }
+
+  function clearAll() {
+    if (confirm('Clear all fields?')) {
+      document.getElementById('plaintext').value = '';
+      document.getElementById('ciphertext').value = '';
+      document.getElementById('encrypt-key').value = '';
+      document.getElementById('decrypt-key').value = '';
+      document.getElementById('enable-expiration').checked = false;
+      document.getElementById('expiration-datetime').value = '';
+      document.getElementById('expiration-ui').style.display = 'none';
+      document.getElementById('result-panel').classList.remove('show');
+      updateStats();
+      showNotification('✓ Cleared');
+    }
+  }
+
+  // Initialize
+  updateStats();
+</script>
+
+</body>
+</html>
